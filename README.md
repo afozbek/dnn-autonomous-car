@@ -9,7 +9,7 @@
 
 ![gradient](2-Neural-Networks/images/gradient.gif)
 ![process](1-Find-Lanes/images/process.png)
-![perceptron](Neural-Networks/images/percept.png)
+![perceptron](2-Neural-Networks/images/percept.png)
 
 
 ## Authors
