@@ -79,6 +79,7 @@ def create_model():
   model = Sequential()
   model.add(Dense(10, input_dim = num_pixels,
                   activation = 'relu'))
+  model.add(Dense(30, activation='relu'))
   model.add(Dense(10, activation='relu'))
   model.add(Dense(num_of_classes, activation='softmax'))
   model.compile(Adam(lr=0.01),
@@ -108,3 +109,27 @@ score = model.evaluate(X_test, y_test, verbose=0)
 print(type(score))
 print('Test Score:', score[0])
 print('Test Accuracy:', score[1])
+
+import requests
+from PIL import Image
+
+url = 'https://www.researchgate.net/profile/Jose_Sempere/publication/221258631/figure/fig1/AS:305526891139075@1449854695342/Handwritten-digit-2.png'
+response = requests.get(url, stream = True)
+img = Image.open(response.raw)
+plt.imshow(img)
+
+import cv2
+
+img_array = np.asarray(img)
+resized = cv2.resize(img_array, (28, 28 ))
+gray_scale = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY) #(28, 28)
+image = cv2.bitwise_not(gray_scale)
+
+plt.imshow(image, cmap=plt.get_cmap('gray'))
+print(image)
+
+image = image / 255
+image = image.reshape(1, 784)
+
+prediction = model.predict_classes(image)
+print("predicted digit:", str(prediction))
