@@ -11,8 +11,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import keras
 from keras.datasets import mnist
-from keras.models import Sequential
-from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D
+from keras.models import Sequential, Model
+from keras.layers import Dense, Flatten
+from keras.layers import Conv2D, MaxPooling2D, Dropout
 from keras.optimizers import Adam
 from keras.utils.np_utils import to_categorical
 import random
@@ -73,6 +74,7 @@ def leNet_model():
   model.add(MaxPooling2D(pool_size=(2, 2)))
   model.add(Flatten())
   model.add(Dense(500, activation='relu'))
+  model.add(Dropout(rate=0.5))
   model.add(Dense(num_classes, activation='softmax'))
   model.compile(Adam(lr=0.01), 
                loss='categorical_crossentropy',
@@ -101,8 +103,8 @@ plt.xlabel('epoch')
 import requests
 from PIL import Image
 
-#url = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcST8KzXHtkSHcxzdpnllMhAj0upLEwnNFdtY6j4YUPcmaf4Ty3u'
-url = 'https://www.researchgate.net/profile/Jose_Sempere/publication/221258631/figure/fig1/AS:305526891139075@1449854695342/Handwritten-digit-2.png'
+url = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcST8KzXHtkSHcxzdpnllMhAj0upLEwnNFdtY6j4YUPcmaf4Ty3u'
+#url = 'https://www.researchgate.net/profile/Jose_Sempere/publication/221258631/figure/fig1/AS:305526891139075@1449854695342/Handwritten-digit-2.png'
 response = requests.get(url, stream = True)
 img = Image.open(response.raw)
 plt.imshow(img)
@@ -122,4 +124,31 @@ image = image.reshape(1, 28, 28, 1)
 
 prediction = model.predict_classes(image)
 print("predicted digit:", str(prediction))
+
+score = model.evaluate(X_test, y_test, verbose=0)
+print(type(score))
+print('Test Score:', score[0])
+print('Test Accuracy:', score[1])
+
+layer1 = Model(inputs = model.layers[0].input,
+               outputs = model.layers[0].output)
+layer2 = Model(inputs = model.layers[0].input,
+               outputs = model.layers[2].output)
+visual_layer1, visual_layer2 = layer1.predict(image), layer2.predict(image)
+print(visual_layer1.shape)
+print(visual_layer2.shape)
+
+plt.figure(figsize=(10, 6))
+for i in range(30):
+  plt.subplot(6, 5, i + 1)
+  plt.imshow(visual_layer1[0, :, :, i],
+            cmap=plt.get_cmap('jet'))
+  plt.axis('off')
+
+plt.figure(figsize=(10, 6))
+for i in range(15):
+  plt.subplot(3, 5, i + 1)
+  plt.imshow(visual_layer2[0, :, :, i],
+            cmap=plt.get_cmap('jet'))
+  plt.axis('off')
 
