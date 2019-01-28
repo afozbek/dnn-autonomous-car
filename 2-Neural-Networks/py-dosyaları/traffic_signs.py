@@ -63,7 +63,7 @@ fig.tight_layout()
 for i in range(cols):
     for j, row in data.iterrows():
         x_selected = X_train[y_train == j]
-        axs[j][i].imshow(x_selected[random.randint(0, len(x_selected - 1)), :, :], cmap=plt.get_cmap("gray"))
+        axs[j][i].imshow(x_selected[random.randint(0, len(x_selected) - 1), :, :], cmap=plt.get_cmap("gray"))
         axs[j][i].axis("off")
         if i == 2:
             axs[j][i].set_title(str(j) + "-" + row["SignName"])
@@ -130,28 +130,50 @@ y_train = to_categorical(y_train, 43)
 y_val = to_categorical(y_val, 43)
 y_test = to_categorical(y_test, 43)
 
-def leNet_model():
+def modified_model():
   model = Sequential()
   #5x5 filter uygula feature map sayısı 30 tane olsun
-  model.add(Conv2D(filters=30, kernel_size=(5, 5), input_shape=(32, 32, 1),
+  model.add(Conv2D(filters=60, kernel_size=(5, 5), input_shape=(32, 32, 1),
+                  activation='relu')) #28*28*30
+  model.add(Conv2D(filters=60, kernel_size=(5, 5),
                   activation='relu')) #28*28*30
   #reduce parameters and helps overfitting
   model.add(MaxPooling2D(pool_size=(2,2))) #14*14*30
-  model.add(Conv2D(15, (3, 3), activation='relu')) #12*12*15
+  
+  model.add(Conv2D(30, (3, 3), activation='relu')) #12*12*15
+  model.add(Conv2D(30, (3, 3), activation='relu')) #12*12*15
   model.add(MaxPooling2D(pool_size=(2, 2))) #6*6*15
+  model.add(Dropout(rate = 0.5))
+  
   model.add(Flatten()) #Takes Convoluted data and flatten it to 1d format
   model.add(Dense(units = 500, activation='relu'))
   model.add(Dropout(rate = 0.5))
   model.add(Dense(num_classes, activation = 'softmax'))
   #Compile model
-  model.compile(Adam(lr = 0.01), loss = 'categorical_crossentropy',
+  model.compile(Adam(lr = 0.001), loss = 'categorical_crossentropy',
                metrics = ['accuracy'])
   return model
 
-model = leNet_model()
+model = modified_model()
 print(model.summary())
 
-model.fit(X_train, y_train, epochs=10, 
+history = model.fit(X_train, y_train, epochs=10, 
          validation_data = (X_val, y_val),
          batch_size=400, verbose=1, shuffle=1)
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.legend(['training', 'validation'])
+plt.title('Loss')
+plt.xlabel('epoch')
+
+plt.plot(history.history['acc'])
+plt.plot(history.history['val_acc'])
+plt.legend(['training', 'validation'])
+plt.title('Accucary')
+plt.xlabel('epoch')
+
+score = model.evaluate(X_test,y_test, verbose=0)
+print('Test score:', score[0])
+print('Test Accuracy:', score[1])
 
