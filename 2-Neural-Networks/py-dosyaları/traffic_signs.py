@@ -129,3 +129,29 @@ print(X_test.shape)
 y_train = to_categorical(y_train, 43)
 y_val = to_categorical(y_val, 43)
 y_test = to_categorical(y_test, 43)
+
+def leNet_model():
+  model = Sequential()
+  #5x5 filter uygula feature map sayısı 30 tane olsun
+  model.add(Conv2D(filters=30, kernel_size=(5, 5), input_shape=(32, 32, 1),
+                  activation='relu')) #28*28*30
+  #reduce parameters and helps overfitting
+  model.add(MaxPooling2D(pool_size=(2,2))) #14*14*30
+  model.add(Conv2D(15, (3, 3), activation='relu')) #12*12*15
+  model.add(MaxPooling2D(pool_size=(2, 2))) #6*6*15
+  model.add(Flatten()) #Takes Convoluted data and flatten it to 1d format
+  model.add(Dense(units = 500, activation='relu'))
+  model.add(Dropout(rate = 0.5))
+  model.add(Dense(num_classes, activation = 'softmax'))
+  #Compile model
+  model.compile(Adam(lr = 0.01), loss = 'categorical_crossentropy',
+               metrics = ['accuracy'])
+  return model
+
+model = leNet_model()
+print(model.summary())
+
+model.fit(X_train, y_train, epochs=10, 
+         validation_data = (X_val, y_val),
+         batch_size=400, verbose=1, shuffle=1)
+
