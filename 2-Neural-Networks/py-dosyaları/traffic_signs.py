@@ -122,6 +122,25 @@ X_train = X_train.reshape(34799, 32, 32, 1) #reshape the input format
 X_val = X_val.reshape(4410, 32, 32, 1) #reshape the input format
 X_test = X_test.reshape(12630, 32, 32, 1) #reshape the input format
 
+from keras.preprocessing.image import ImageDataGenerator
+
+datagen = ImageDataGenerator(width_shift_range=0.1,
+                            height_shift_range=0.1,
+                            zoom_range=0.2,
+                            shear_range=0.1,
+                            rotation_range=10)
+datagen.fit(X_train)
+
+batches = datagen.flow(X_train, y_train, batch_size=20)
+X_batch, y_batch = next(batches)
+
+fig, axs = plt.subplots(1, 15, figsize=(20, 5))
+fig.tight_layout()
+
+for i in range(15):
+  axs[i].imshow(X_batch[i].reshape(32, 32))
+  axs[i].axis("off")
+
 print(X_train.shape)
 print(X_val.shape)
 print(X_test.shape)
@@ -143,7 +162,7 @@ def modified_model():
   model.add(Conv2D(30, (3, 3), activation='relu')) #12*12*15
   model.add(Conv2D(30, (3, 3), activation='relu')) #12*12*15
   model.add(MaxPooling2D(pool_size=(2, 2))) #6*6*15
-  model.add(Dropout(rate = 0.5))
+  #model.add(Dropout(rate = 0.5))
   
   model.add(Flatten()) #Takes Convoluted data and flatten it to 1d format
   model.add(Dense(units = 500, activation='relu'))
@@ -157,9 +176,9 @@ def modified_model():
 model = modified_model()
 print(model.summary())
 
-history = model.fit(X_train, y_train, epochs=10, 
-         validation_data = (X_val, y_val),
-         batch_size=400, verbose=1, shuffle=1)
+history = model.fit_generator(datagen.flow(X_train, y_train, batch_size=50),
+                              steps_per_epoch=2000, epochs=10,
+                              validation_data=(X_val, y_val), shuffle=1)
 
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
@@ -176,4 +195,28 @@ plt.xlabel('epoch')
 score = model.evaluate(X_test,y_test, verbose=0)
 print('Test score:', score[0])
 print('Test Accuracy:', score[1])
+
+#fetch image
+
+import requests
+from PIL import Image
+url = 'https://c8.alamy.com/comp/J2MRAJ/german-road-sign-bicycles-crossing-J2MRAJ.jpg'
+r = requests.get(url, stream=True)
+img = Image.open(r.raw)
+plt.imshow(img, cmap=plt.get_cmap('gray'))
+
+#Preprocess image
+
+img = np.asarray(img)
+img = cv2.resize(img, (32, 32))
+img = preprocessing(img)
+plt.imshow(img, cmap = plt.get_cmap('gray'))
+print(img.shape)
+
+#Reshape reshape
+
+img = img.reshape(1, 32, 32, 1)
+
+#Test image
+print("predicted sign: "+ str(model.predict_classes(img)))
 
