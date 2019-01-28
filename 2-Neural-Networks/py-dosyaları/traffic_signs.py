@@ -70,3 +70,62 @@ for i in range(cols):
             num_of_samples.append(len(x_selected))
     #(index / Series)
 
+print(num_of_samples)
+plt.figure(figsize=(12, 4))
+plt.bar(range(0, num_classes), num_of_samples)
+plt.title("Distribution of the training dataset")
+plt.xlabel("Class number")
+plt.ylabel("Number of images")
+
+import cv2 
+
+
+plt.imshow(X_train[560])
+plt.axis('off')
+print(X_train[560].shape)
+print(y_train[560])
+
+#Converts rgb image to greyscale image 3d to 2d
+def grayscale(img):
+  img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+  return img
+
+img = grayscale(X_train[560])
+plt.imshow(img)
+plt.axis("off")
+print(img.shape) #We will see our image now 2d.
+
+def equalize(img):
+  img = cv2.equalizeHist(img) #only accept greyscale img
+  return img
+
+img = equalize(img)
+plt.imshow(img)
+plt.axis("off")
+print(img.shape)
+
+def preprocessing(img):
+  img = grayscale(img)
+  img = equalize(img)
+  img = img / 255
+  return img
+
+X_train = np.array(list(map(preprocessing, X_train)))
+X_val = np.array(list(map(preprocessing, X_val)))
+X_test = np.array(list(map(preprocessing, X_test)))
+
+plt.imshow(X_train[random.randint(0, len(X_train) - 1)])
+plt.axis("off")
+print(X_train.shape)
+
+X_train = X_train.reshape(34799, 32, 32, 1) #reshape the input format
+X_val = X_val.reshape(4410, 32, 32, 1) #reshape the input format
+X_test = X_test.reshape(12630, 32, 32, 1) #reshape the input format
+
+print(X_train.shape)
+print(X_val.shape)
+print(X_test.shape)
+
+y_train = to_categorical(y_train, 43)
+y_val = to_categorical(y_val, 43)
+y_test = to_categorical(y_test, 43)
