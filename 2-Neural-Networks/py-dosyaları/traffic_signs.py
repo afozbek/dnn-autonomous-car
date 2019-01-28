@@ -7,9 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/1XAmB_Frgm_gBdcK95tmVX9DUkMyHHFUM
 """
 
-!git clone https://bitbucket.org/jadslim/german-traffic-signs
+#!git clone https://bitbucket.org/jadslim/german-traffic-signs
 
-!ls german-traffic-signs
+#!ls german-traffic-signs
 
 import numpy as np
 import matplotlib.pyplot as plt
