@@ -18,6 +18,7 @@ import keras
 from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
+from sklearn.utils import shuffle
 import cv2
 import pandas as pd
 import ntpath
@@ -43,6 +44,26 @@ num_bins = 25
 samples_per_bin = 200
 hist, bins = np.histogram(data['steering'], num_bins)
 center = (bins[:-1] + bins[1:]) * 0.5
+plt.bar(center, hist, width = 0.05)
+plt.plot((np.min(data['steering']), np.max(data['steering'])),
+        (samples_per_bin, samples_per_bin))
+
+print('total data:', len(data))
+remove_list = []
+for j in range(num_bins):
+  list_ = []
+  for i in range(len(data['steering'])):
+    if data['steering'][i] >= bins[j] and data['steering'][i] <= bins[j + 1]:
+      list_.append(i)
+  list_ = shuffle(list_)
+  list_ = list_[samples_per_bin:]
+  remove_list.extend(list_)
+
+print('removed', len(remove_list))
+data.drop(data.index[remove_list], inplace=True)
+print('remaining', len(data))
+
+hist, _ = np.histogram(data['steering'], (num_bins))
 plt.bar(center, hist, width = 0.05)
 plt.plot((np.min(data['steering']), np.max(data['steering'])),
         (samples_per_bin, samples_per_bin))
