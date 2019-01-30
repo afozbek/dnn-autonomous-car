@@ -7,9 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/10Wh2eDGzgNVl3LoPWsN2lOvGjS_ZVDYp
 """
 
-!git clone https://github.com/afozbek/Track_Data
+#!git clone https://github.com/afozbek/Track_Data
 
-!ls Track_Data
+#!ls Track_Data
 
 import os
 import numpy as np
@@ -19,6 +19,7 @@ from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.layers import Conv2D, MaxPooling2D, Dropout, Flatten, Dense
 from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
 import cv2
 import pandas as pd
 import ntpath
@@ -67,4 +68,31 @@ hist, _ = np.histogram(data['steering'], (num_bins))
 plt.bar(center, hist, width = 0.05)
 plt.plot((np.min(data['steering']), np.max(data['steering'])),
         (samples_per_bin, samples_per_bin))
+
+print(data.iloc[1]) #iloc-->records based on the indexes
+def load_img_steering(datadir, data):
+  image_path = []
+  steering = []
+  for i in range(len(data)):
+    indexed_data = data.iloc[i]
+    center, left, right = indexed_data[0], indexed_data[1], indexed_data[2]
+    image_path.append(os.path.join(datadir, center.strip()))
+    steering.append(float(indexed_data[3]))
+  #Convert the input to an array.  
+  image_paths = np.asarray(image_path) 
+  steerings = np.asarray(steering)
+  return image_paths, steerings
+
+image_paths, steerings = load_img_steering(datadir + '/IMG', data)
+
+#Split arrays or matrices into random train and test subsets
+X_train, X_valid, y_train, y_valid = train_test_split(image_paths, steerings, test_size=0.2, random_state=6)
+
+print('Training Samples: {}\nValid Samples: {}'.format(len(X_train), len(X_valid)))
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+axes[0].hist(y_train, bins=num_bins, width=0.05, color='blue')
+axes[0].set_title('Training set')
+axes[1].hist(y_valid, bins=num_bins, width=0.05, color='red')
+axes[1].set_title('Valid set')
 
