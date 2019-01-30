@@ -156,7 +156,7 @@ axes[1].set_title('Brightened Image')
 
 def img_random_flip(image, steering_angle):
   image = cv2.flip(image, 1)
-  steering_angle = - steering_angle
+  steering_angle = -steering_angle
   return image, steering_angle
 
 random_index = random.randint(0, 1000)
@@ -177,7 +177,6 @@ axes[1].set_title('Flipped Image - ' + 'Steering Angle:' + str(flipped_steering_
 
 def random_augment(image, steering_angle):
   image = mpimg.imread(image)
-  
   if np.random.rand() < 0.5:
     image = pan(image)
   if np.random.rand() < 0.5:
@@ -209,8 +208,8 @@ for i in range(10):
   axs[i][1].imshow(augmented_image)
   axs[i][1].set_title('Augmented Image')
 
-def img_preprocess(img_path):
-  img = mpimg.imread(img_path)
+def img_preprocess(img):
+  #img = mpimg.imread(img)
   img = img[60:136, :,:]
   img = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
   img = cv2.GaussianBlur(img, (3, 3), 0)
@@ -218,9 +217,9 @@ def img_preprocess(img_path):
   img = img / 255
   return img
 
-image_path = image_paths[60]
-original_image = mpimg.imread(image_path)
-preprocessed_image = img_preprocess(image_path)
+image = image_paths[60]
+original_image = mpimg.imread(image)
+preprocessed_image = img_preprocess(original_image)
 
 fig, axes = plt.subplots(1, 2, figsize=(15, 10))
 fig.tight_layout()
@@ -229,14 +228,37 @@ axes[0].set_title('Original Image')
 axes[1].imshow(preprocessed_image)
 axes[1].set_title('Preprocessed Image')
 
-#Make an iterator that computes the function 
-#using arguments from each of the iterables. 
-X_train = np.array(list(map(img_preprocess, X_train))) #Each image in X_traing goes as parameter
-X_valid = np.array(list(map(img_preprocess, X_valid))) #Each image in X_traing goes as parameter
+def batch_generator(image_paths, steering_ang, batch_size, istraining):
+  
+  while True:
+    batch_img = []
+    batch_steering = []
+    
+    for i in range(batch_size):
+      random_index = random.randint(0, len(image_paths) - 1)
+      
+      if istraining:
+        im, steering = random_augment(image_paths[random_index], steering_ang[random_index])
+      else:
+        im = mpimg.imread(image_paths[random_index])
+        steering = steering_ang[random_index]
+      
+      im = img_preprocess(im)
+      batch_img.append(im)
+      batch_steering.append(steering)
+    yield (np.asarray(batch_img), np.asarray(batch_steering))
 
-plt.imshow(X_train[random.randint(0, len(X_train) - 1)])
-plt.axis("off")
-print(X_train.shape)
+X_train_gen, y_train_gen = next(batch_generator(X_train, y_train, 1, 1))
+X_valid_gen, y_valid_gen = next(batch_generator(X_valid, y_valid, 1, 0))
+
+fig, axes = plt.subplots(1, 2, figsize=(15, 10))
+fig.tight_layout()
+
+axes[0].imshow(X_train_gen[0])
+axes[0].set_title('training Image')
+
+axes[1].imshow(X_valid_gen[0])
+axes[1].set_title('Validation Image')
 
 """92
 
@@ -262,17 +284,17 @@ def nvidia_model():
   
   model.add(Flatten())
   model.add(Dense(units=100, activation='elu')) #fully connected layer, 100 nodes
-  model.add(Dropout(rate=0.5)) #reduce overfitting
+  #model.add(Dropout(rate=0.5)) #reduce overfitting
   
   model.add(Dense(units=50,  activation='elu')) #fully connected layer ,  50 nodes
-  model.add(Dropout(rate=0.5)) #reduce overfitting
+  #model.add(Dropout(rate=0.5)) #reduce overfitting
 
   model.add(Dense(units=10,  activation='elu')) #fully connected layer ,  10 nodes
-  model.add(Dropout(rate=0.5)) #reduce overfitting
+  #model.add(Dropout(rate=0.5)) #reduce overfitting
 
   model.add(Dense(1))
   
-  adam = Adam(lr=1e-3) #0.001
+  adam = Adam(lr=1e-4) #0.0001
   model.compile(loss='mse', optimizer=adam)
   
   return model
@@ -280,8 +302,13 @@ def nvidia_model():
 model = nvidia_model()
 print(model.summary())
 
-history = model.fit(X_train, y_train, epochs=30, validation_data=(X_valid,y_valid),
-          batch_size=100, verbose=1, shuffle=1)
+history = model.fit_generator(batch_generator(X_train, y_train, batch_size=100,istraining=1),
+                              steps_per_epoch=300, 
+                              epochs=10,
+                              validation_data=batch_generator(X_valid, y_valid, 100, 0),
+                              validation_steps=200,
+                              verbose=1, 
+                              shuffle=1)
 
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
@@ -290,3 +317,6 @@ plt.title('Loss')
 plt.xlabel('Epoch')
 
 model.save('model.h5')
+
+from google.colab import files
+files.download('model.h5')
